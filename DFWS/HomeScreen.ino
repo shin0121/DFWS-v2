@@ -37,6 +37,7 @@ void HomeScreen() {
 //Tare
 void DrawTare() {
     tft.fillScreen(ILI9341_CYAN);
+    HomeScreen();
 }
 
 

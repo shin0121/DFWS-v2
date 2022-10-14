@@ -32,6 +32,7 @@ void DrawTrack(int goal, int intake, int rCal) {
     tft.setCursor(145, 85);
     tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
     tft.setTextSize(TEXT_TSIZE);
+    intake = y;
     tft.print(intake);
 
     //Remaining Calories
@@ -41,10 +42,9 @@ void DrawTrack(int goal, int intake, int rCal) {
     tft.setTextSize(2);
     tft.print("Remaining Calories");
 
-    tft.setCursor(95, 200);
+    tft.setCursor(85, 200);
     tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
     tft.setTextSize(4);
-    //int goal1 = targetGoal(goal);
     tft.print(rCal);
 
     //Back Button
@@ -58,13 +58,6 @@ void DrawTrack(int goal, int intake, int rCal) {
         80, 30, ILI9341_RED, ILI9341_RED, ILI9341_BLACK,
         "Reset", 1.5);
     ResetButton[1].drawButton();
-}
-
-int SetTracker(int goal, int intake, int rCal) {
-    int x = goal;
-    int y = intake;
-    int z = rCal;
-    return x, y, z;
 }
 
 int RemainingCal(int intake, int rCal) {

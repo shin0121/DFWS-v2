@@ -36,3 +36,9 @@ void clearInput() {
     tft.fillRect(TEXT_X, TEXT_Y, TEXT_W, 70, ILI9341_DARKGREY);
     tft.drawRect(TEXT_X, TEXT_Y, TEXT_W, 70, ILI9341_WHITE);
 }
+
+/*int addIntake(int calorie, int newCalorie) {
+    int total = calorie + newCalorie;
+    return total;
+}*/
+

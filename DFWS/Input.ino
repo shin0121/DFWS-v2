@@ -16,7 +16,7 @@ void DrawInput() {
     // create 'text field'
     tft.drawRect(TEXT_X_input, TEXT_Y_input, TEXT_W_input, TEXT_H_input, ILI9341_WHITE);
     tft.fillRect(STATUS_X, STATUS_Y, 240, 8, ILI9341_DARKGREY);
-    tft.setCursor(STATUS_X, STATUS_Y);
+    tft.setCursor(STATUS_X, STATUS_Y+5);
     tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(2);
     tft.print("Enter Target Goal");
