@@ -8,7 +8,7 @@
 #include <Adafruit_GFX.h> // Core graphics library
 #include <Adafruit_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
-#include <HX711_ADC.h> 
+//#include <HX711_ADC.h> 
 #include <Wire.h>
 
 
@@ -16,7 +16,7 @@
 const int LOADCELL_DOUT_PIN = 47;
 const int LOADCELL_SCK_PIN = 46;
 
-HX711_ADC scale(47, 46);
+//HX711_ADC scale(47, 46);
 int taree = A0;
 
 // Color definitions
@@ -451,8 +451,6 @@ void loop() {
             }     
         }    
     }
-
-    
     if (currentPage == '3') {
         DrawTare();
     }
@@ -560,6 +558,7 @@ void loop() {
                 if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
+                    displaySave(categ);
                     clearInput();
                     calorie = fruitcalories[count]; // Calorie = contains the saved calorie
                     Serial.println("Calorie:");
