@@ -173,10 +173,7 @@ ILI9341_BLUE, ILI9341_LIGHTGREY, ILI9341_BLUE, ILI9341_RED };
 Adafruit_GFX_Button SaveButton[1];
 
 Adafruit_GFX_Button BackButton[1], NextButton[1], CancelButton[1];
-Adafruit_GFX_Button inputButton[1];
-Adafruit_GFX_Button tareButton[1];
-Adafruit_GFX_Button trackButton[1];
-Adafruit_GFX_Button ResetButton[1];
+Adafruit_GFX_Button inputButton[1], tareButton[1], trackButton[1], ResetButton[1];
 
 //Category Buttons
 Adafruit_GFX_Button category[5];
