@@ -26,6 +26,7 @@ void DrawInput() {
         BUTTON_W_save, BUTTON_H_save, ILI9341_GREEN, ILI9341_GREEN, ILI9341_WHITE,
         "Save", BUTTON_TEXTSIZE_input);
     SaveButton[1].drawButton();
+
 }
 
 void displayErrorGoal() {

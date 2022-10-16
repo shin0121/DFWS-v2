@@ -12,6 +12,7 @@
 #include <Wire.h>
 
 
+
 // HX711 circuit wiring
 const int LOADCELL_DOUT_PIN = 47;
 const int LOADCELL_SCK_PIN = 46;
@@ -61,13 +62,21 @@ int taree = A0;
 #define TEXT_LEN 4
 char textfield[TEXT_LEN + 1] = "";
 uint8_t textfield_i = 0;
+
 #define YP A3 // must be an analog pin, use "An" notation!
 #define XM A2 // must be an analog pin, use "An" notation!
 #define YM 9 // can be a digital pin
 #define XP 8 // can be a digital pin
-#define TS_MINX 130
-#define TS_MAXX 910
-#define TS_MINY 80
+
+#define LCD_CS A3
+#define LCD_CD A2
+#define LCD_WR A1
+#define LCD_RD A0
+#define LCD_RESET A4
+
+#define TS_MINX 100
+#define TS_MAXX 920
+#define TS_MINY 70
 #define TS_MAXY 900
 // We have a status line for like, is FONA working
 #define STATUS_X 10
@@ -155,7 +164,7 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #define rCal_X 10
 #define rCal_Y 250
 
-#define MINPRESSURE 50
+#define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
 char currentPage, categoryPage, unit;
@@ -163,14 +172,17 @@ int newCalorie = 0;
 int newcurrent = 0, current = 0, count = 0, counter = 0, check = 0, calorie = 0;
 int x = 0, y = 0, z = 0;
 int totalIntake = 0;
+bool buttonEnabled = true;
+int weight = 0;
+int finalWeight = 0;
 
 
 Adafruit_GFX_Button i_buttons[12];
 /* create 15 buttons, in classic candybar phone style */
 char i_buttonlabels[12][5] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "Back", "9", "Clr" };
-uint16_t i_buttoncolors[12] = { ILI9341_BLUE, ILI9341_BLUE, ILI9341_BLUE,
-ILI9341_BLUE, ILI9341_BLUE, ILI9341_BLUE, ILI9341_BLUE, ILI9341_BLUE,
-ILI9341_BLUE, ILI9341_LIGHTGREY, ILI9341_BLUE, ILI9341_RED };
+uint16_t i_buttoncolors[12] = { ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK,
+ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK,
+ILI9341_BLACK, ILI9341_BLUE, ILI9341_BLACK, ILI9341_RED };
 
 Adafruit_GFX_Button SaveButton[1];
 
@@ -182,8 +194,8 @@ Adafruit_GFX_Button ResetButton[1];
 
 //Category Buttons
 Adafruit_GFX_Button category[5];
-char categorylabels[5][24] = { "Fruits","Vegetables","Grains", "Protein", "Dairy" };
-uint16_t categorycolors[5] = { ILI9341_DARKGREY, ILI9341_RED, ILI9341_esti2, ILI9341_esti, ILI9341_PINK};
+char categorylabels[6][24] = { "Fruits","Vegetables","Grains", "Protein", "Dairy", "Save"};
+uint16_t categorycolors[6] = { ILI9341_DARKGREY, ILI9341_RED, ILI9341_esti2, ILI9341_esti, ILI9341_PINK, ILI9341_DARKGREEN};
 
 //Category Buttons
 Adafruit_GFX_Button fruit[10];
@@ -216,19 +228,18 @@ void setup() {
     tft.begin(0x9341);
     tft.setRotation(0);
 
+    //clear_LCD();
+
 
     //Serial.println("HomeScreen Display");
 
     HomeScreen();
-    currentPage = '0';
-    newcurrent = '0';
-
-    //Serial.begin(57600);
-    pinMode(taree, INPUT_PULLUP);
+    //currentPage = '0';
+    //newcurrent = '0';
     scale.begin(); // start connection to HX711
     scale.start(1000); // load cells gets 1000ms of time to stabilize
     //Calibarate your LOAD CELL with 100g weight, and change the value according to readings
-    scale.setCalFactor(228);
+    scale.setCalFactor(216.83);
 
 }
 
@@ -237,38 +248,7 @@ void setup() {
 
 void loop() {
 
-    scale.update();
-    float w = scale.getData();
-    if (w < 0)
-    {
-        w = w * (-1);
-        //Serial.println("-");
-        //Serial.println("-");
-    }
-    else
-    {
-        //Serial.println(" ");
-        //Serial.println(" ");
-    }
-
-    //DisplayWeight(w);
-
-    if (w >= 10000)
-    {
-        w = 0;
-        OverWeight();
-        delay(200);
-    }
-
-    if (digitalRead(taree) == LOW)
-    {
-        Serial.println("   Taring...    ");
-        scale.start(1000);
-        Serial.println("                ");
-    }
-
-   
-
+  
     digitalWrite(13, HIGH);
     TSPoint p = ts.getPoint();
     digitalWrite(13, LOW);
@@ -283,21 +263,29 @@ void loop() {
     }
 
     
+
     if (currentPage == '0') {
 
+        scale.update();
+        int w = scale.getData();
+        weight = computeWeight(w);
+        DisplayWeight(weight);
+
         if (p.x >= 200 && p.x <= 275 && p.y >= 20 && p.y <= 40) {
-            inputButton[1].press(true);
+            inputButton[0].press(true);
             Serial.println("input button");
             DrawInput();
             currentPage = '2';
+
         }
+
         if (p.x >= 200 && p.x <= 275 && p.y >= 50 && p.y <= 70) {
-            tareButton[1].press(true);
+            tareButton[0].press(true);
             Serial.println("tare button");
             currentPage = '3';
         }
         if (p.x >= 200 && p.x <= 275 && p.y >= 80 && p.y <= 100) {
-            trackButton[1].press(true);
+            trackButton[0].press(true);
             Serial.println("track button");
             DrawTrack(x,y,z);
             currentPage = '4';
@@ -308,55 +296,60 @@ void loop() {
             tareButton[0].press(false);
             trackButton[0].press(false);
 
-            for (uint8_t b = 0; b < 5; b++) {
+            for (uint8_t b = 0; b < 6; b++) {
                 if (category[b].contains(p.x, p.y)) {
-                    //Serial.print("Pressing: "); Serial.println(b);
                     category[b].press(true); // tell the button it is pressed
-                    //Serial.println("p.x:");
-                    //Serial.println(p.x);
-                    //Serial.println("p.y");
-                    //Serial.println(p.y);
 
-                    if (b == 0) {
-                        currentPage = '5';
+                    if (b == 0) {  //currentPage = 5
                         tft.setRotation(0);
                         DrawFruits();
+                        currentPage = '5';
                         Serial.println("Fruits");
                     }
-                    if (b == 1) {
-                        currentPage = '6';
+                    if (b == 1) { //currentPage = 6
                         tft.setRotation(0);
                         DrawVeg();
+                        currentPage = '6';
                         Serial.println("Veg");
                     }
-                    if (b == 2) {
-                        currentPage = '7';
+                    if (b == 2) { //currentPage = 7
                         tft.setRotation(0);
                         DrawGrains();
+                        currentPage = '7';
                     }
-                    if (b == 3) {
-                        currentPage = '8';
+                    if (b == 3) { //currentPage = 8
                         tft.setRotation(0);
                         DrawProtein();
+                        currentPage = '8';
                     }
-                    if (b == 4) {
-                        currentPage = '9';
+                    if (b == 4) { //currentPage = 9
                         tft.setRotation(0);
                         DrawDairy();
+                        currentPage = '9';
+                    }
+
+                    if (b == 5) {
+                        tft.setRotation(0);     
+                        finalWeight = weight;
+                        Serial.print(finalWeight);
+                        SaveWeightButton(finalWeight);
+                        //HomeScreen();
                     }
                     else {
                         category[b].press(false); // tell the button it is NOT pressed
                     }
                 }
+                
             }
                
         }
+        
     }
+
 
     //INPUT
     if (currentPage == '2') {
-
-        //Serial.println("INSIDE!");
+        
         for (uint8_t b = 0; b < 12; b++) {
             if (i_buttons[b].contains(p.x, p.y)) {
                 i_buttons[b].press(true); // tell the button it is pressed
@@ -364,6 +357,7 @@ void loop() {
             else {
                 i_buttons[b].press(false); // tell the button it is NOT pressed
             }
+            
         }
         // now we can ask the buttons if their state has changed
         for (uint8_t b = 0; b < 12; b++) {
@@ -382,6 +376,7 @@ void loop() {
                         textfield[textfield_i] = 0; // zero terminate
                     }
                 }
+
 
                 // clr button
                 if (b == 11) {
@@ -407,19 +402,18 @@ void loop() {
 
                 //Back Button
                 if (b == 9) {
-                    currentPage = '0';
                     textfield_i = 0;
-                    void fillscreen();
+                    //void fillscreen();
                     HomeScreen();
                 }
 
                 
             }
+            
         }
 
         if (p.x >= 120 && p.x <= 320 && p.y >= 280 && p.y <= 315) {
             Serial.println("save button");
-            Serial.println("Save button");
 
             x = atoi(textfield);
             Serial.println(x);
@@ -444,7 +438,16 @@ void loop() {
 
     
     if (currentPage == '3') {
-        DrawTare();
+        tft.fillRect(20, 120, 200, 50, ILI9341_WHITE);
+        tft.setCursor(90, 140);
+        tft.setTextColor(ILI9341_BLACK);
+        tft.setTextSize(2);
+        tft.println("TARE");
+
+        weight = 0;
+        DisplayWeight(weight);
+        scale.start(1000);
+        HomeScreen();
     }
 
     //Tracker
@@ -457,16 +460,14 @@ void loop() {
             BackButton[1].press(false); // tell the button it is NOT pressed
         }
 
-        if (BackButton[1].justReleased()) {
+        if (BackButton[2].justReleased()) {
             BackButton[1].drawButton(); // draw normal
         }
 
         if (BackButton[1].justPressed()) {
             BackButton[1].drawButton(true);
-            currentPage = '0';
             void fillscreen();
             HomeScreen();
-
         }
 
         if (ResetButton[1].contains(p.x, p.y)) {
@@ -483,7 +484,6 @@ void loop() {
         if (ResetButton[1].justPressed()) {
             ResetButton[1].drawButton(true);
             Serial.println("reset button");
-            x = 0;
             y = 0;
             z = 0;
             Serial.println(x);
@@ -505,9 +505,7 @@ void loop() {
         if (p.x >= 200 && p.x <= 275 && p.y >= 20 && p.y <= 40) {
             clearInput();
         }
-        if (p.x >= 40 && p.x <= 100 && p.y >= 295 && p.y <= 325) {
-            currentPage = '0';
-            void fillscreen();
+        if (p.x >= 10 && p.x <= 100 && p.y >= 295 && p.y <= 325) {
             HomeScreen();
         }
         else {
@@ -515,6 +513,7 @@ void loop() {
             CancelButton[0].press(false);
 
             if (p.x >= 120 && p.x <= 340 && p.y >= 110 && p.y <= 140) {
+                clearInput();
                 fruit[0].press(true);
                 Serial.println("b = 1");
                 count = 0;
@@ -522,6 +521,7 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 148 && p.y <= 178) {
+                clearInput();
                 fruit[1].press(true);
                 Serial.println("b = 2");
                 count = 1;
@@ -529,41 +529,54 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 186 && p.y <= 216) {
+                clearInput();
                 fruit[2].press(true);
                 Serial.println("b = 3");
                 count = 2;
                 displayCalorie(2, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 224 && p.y <= 254) {
+                clearInput();
                 fruit[3].press(true);
                 Serial.println("b = 4");
                 count = 3;
                 displayCalorie(3, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 262 && p.y <= 292) {
+                clearInput();
                 fruit[4].press(true);
                 Serial.println("b = 5");
                 count = 4;
                 displayCalorie(4, categ);
             }
             else {
-                if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
+                if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 100) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
-                    clearInput();
-                    calorie = fruitcalories[count]; // Calorie = contains the saved calorie
-                    Serial.print("Calorie:");
-                    Serial.println(calorie);                   
-                    totalIntake += calorie;
-                    Serial.println(totalIntake);
-                    y = totalIntake;
-                    z = x - y;
+                    if (x == 0) {
+                        errorSave();
+                    }
+                    else {
+                        displaySave(categ, count);
+                        clearInput();
+                        calorie = fruitcalories[count]; // Calorie = contains the saved calorie
+                        Serial.print("Calorie before: ");
+                        Serial.println(calorie);
+                        Serial.println(finalWeight);
+                        calorie = ceil(double((float)finalWeight / 100) * calorie);
+                        Serial.print("Calorie: ");
+                        Serial.println(calorie);
+                        totalIntake += calorie;
+                        Serial.println(totalIntake);
+                        y = totalIntake;
+                        z = x - y;
+
+                    }
 
                 }
                 else {
                     SaveButton[0].press(false);
                 }
-                //y = addIntake(addCalories, calCounter + 1);
 
             }
         }
@@ -587,12 +600,14 @@ void loop() {
             CancelButton[0].press(false);
 
             if (p.x >= 120 && p.x <= 340 && p.y >= 110 && p.y <= 140) {
+                clearInput();
                 veg[0].press(true);
                 Serial.println("b = 1");
                 count = 0;
                 displayCalorie(0, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 148 && p.y <= 178) {
+                clearInput();
                 veg[1].press(true);
                 Serial.println("b = 2");
                 count = 1;
@@ -600,18 +615,21 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 186 && p.y <= 216) {
+                clearInput();
                 veg[2].press(true);
                 Serial.println("b = 3");
                 count = 2;
                 displayCalorie(2, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 224 && p.y <= 254) {
+                clearInput();
                 veg[3].press(true);
                 Serial.println("b = 4");
                 count = 3;
                 displayCalorie(3, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 262 && p.y <= 292) {
+                clearInput();
                 veg[4].press(true);
                 Serial.println("b = 5");
                 count = 4;
@@ -621,14 +639,25 @@ void loop() {
                 if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
-                    clearInput();
-                    calorie = vegcalories[count]; // Calorie = contains the saved calorie
-                    Serial.print("Calorie:");
-                    Serial.println(calorie);
-                    totalIntake += calorie;
-                    Serial.println(totalIntake);
-                    y = totalIntake;
-                    z = x - y;
+                    if (x == 0) {
+                        errorSave();
+                    }
+                    else {
+                        displaySave(categ, count);
+                        clearInput();
+                        calorie = vegcalories[count]; // Calorie = contains the saved calorie
+                        Serial.print("Calorie before: ");
+                        Serial.println(calorie);
+                        Serial.println(finalWeight);
+                        calorie = ceil(double((float)finalWeight / 100) * calorie);
+                        Serial.print("Calorie: ");
+                        Serial.println(calorie);
+                        totalIntake += calorie;
+                        Serial.println(totalIntake);
+                        y = totalIntake;
+                        z = x - y;
+
+                    }
 
                 }
                 else {
@@ -648,7 +677,6 @@ void loop() {
             clearInput();
         }
         if (p.x >= 40 && p.x <= 100 && p.y >= 295 && p.y <= 325) {
-            currentPage = '0';
             void fillscreen();
             HomeScreen();
         }
@@ -657,12 +685,14 @@ void loop() {
             CancelButton[0].press(false);
 
             if (p.x >= 120 && p.x <= 340 && p.y >= 110 && p.y <= 140) {
+                clearInput();
                 grains[0].press(true);
                 Serial.println("b = 1");
                 count = 0;
                 displayCalorie(0, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 148 && p.y <= 178) {
+                clearInput();
                 grains[1].press(true);
                 Serial.println("b = 2");
                 count = 1;
@@ -670,18 +700,21 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 186 && p.y <= 216) {
+                clearInput();
                 grains[2].press(true);
                 Serial.println("b = 3");
                 count = 2;
                 displayCalorie(2, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 224 && p.y <= 254) {
+                clearInput();
                 grains[3].press(true);
                 Serial.println("b = 4");
                 count = 3;
                 displayCalorie(3, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 262 && p.y <= 292) {
+                clearInput();
                 grains[4].press(true);
                 Serial.println("b = 5");
                 count = 4;
@@ -691,14 +724,25 @@ void loop() {
                 if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
-                    clearInput();
-                    calorie = grainscalories[count]; // Calorie = contains the saved calorie
-                    Serial.print("Calorie:");
-                    Serial.println(calorie);
-                    totalIntake += calorie;
-                    Serial.println(totalIntake);
-                    y = totalIntake;
-                    z = x - y;
+                    if (x == 0) {
+                        errorSave();
+                    }
+                    else {
+                        displaySave(categ, count);
+                        clearInput();
+                        calorie = grainscalories[count]; // Calorie = contains the saved calorie
+                        Serial.print("Calorie before: ");
+                        Serial.println(calorie);
+                        Serial.println(finalWeight);
+                        calorie = ceil(double((float)finalWeight / 100) * calorie);
+                        Serial.print("Calorie: ");
+                        Serial.println(calorie);
+                        totalIntake += calorie;
+                        Serial.println(totalIntake);
+                        y = totalIntake;
+                        z = x - y;
+
+                    }
 
                 }
                 else {
@@ -727,12 +771,14 @@ void loop() {
             CancelButton[0].press(false);
 
             if (p.x >= 120 && p.x <= 340 && p.y >= 110 && p.y <= 140) {
+                clearInput();
                 protein[0].press(true);
                 Serial.println("b = 1");
                 count = 0;
                 displayCalorie(0, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 148 && p.y <= 178) {
+                clearInput();
                 protein[1].press(true);
                 Serial.println("b = 2");
                 count = 1;
@@ -740,18 +786,22 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 186 && p.y <= 216) {
+                clearInput();
                 protein[2].press(true);
                 Serial.println("b = 3");
                 count = 2;
                 displayCalorie(2, categ);
             }
+
             if (p.x >= 120 && p.x <= 340 && p.y >= 224 && p.y <= 254) {
+                clearInput();
                 protein[3].press(true);
                 Serial.println("b = 4");
                 count = 3;
                 displayCalorie(3, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 262 && p.y <= 292) {
+                clearInput();
                 protein[4].press(true);
                 Serial.println("b = 5");
                 count = 4;
@@ -761,14 +811,25 @@ void loop() {
                 if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
-                    clearInput();
-                    calorie = proteincalories[count]; // Calorie = contains the saved calorie
-                    Serial.print("Calorie:");
-                    Serial.println(calorie);
-                    totalIntake += calorie;
-                    Serial.println(totalIntake);
-                    y = totalIntake;
-                    z = x - y;
+                    if (x == 0) {
+                        errorSave();
+                    }
+                    else {
+                        displaySave(categ, count);
+                        clearInput();
+                        calorie = proteincalories[count]; // Calorie = contains the saved calorie
+                        Serial.print("Calorie before: ");
+                        Serial.println(calorie);
+                        Serial.println(finalWeight);
+                        calorie = ceil(double((float)finalWeight / 100) * calorie);
+                        Serial.print("Calorie: ");
+                        Serial.println(calorie);
+                        totalIntake += calorie;
+                        Serial.println(totalIntake);
+                        y = totalIntake;
+                        z = x - y;
+
+                    }
 
                 }
                 else {
@@ -797,12 +858,14 @@ void loop() {
             CancelButton[0].press(false);
 
             if (p.x >= 120 && p.x <= 340 && p.y >= 110 && p.y <= 140) {
+                clearInput();
                 dairy[0].press(true);
                 Serial.println("b = 1");
                 count = 0;
                 displayCalorie(0, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 148 && p.y <= 178) {
+                clearInput();
                 dairy[1].press(true);
                 Serial.println("b = 2");
                 count = 1;
@@ -810,18 +873,21 @@ void loop() {
 
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 186 && p.y <= 216) {
+                clearInput();
                 dairy[2].press(true);
                 Serial.println("b = 3");
                 count = 2;
                 displayCalorie(2, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 224 && p.y <= 254) {
+                clearInput();
                 dairy[3].press(true);
                 Serial.println("b = 4");
                 count = 3;
                 displayCalorie(3, categ);
             }
             if (p.x >= 120 && p.x <= 340 && p.y >= 262 && p.y <= 292) {
+                clearInput();
                 dairy[4].press(true);
                 Serial.println("b = 5");
                 count = 4;
@@ -831,14 +897,25 @@ void loop() {
                 if (p.x >= 200 && p.x <= 275 && p.y >= 60 && p.y <= 90) { // Save Button
                     SaveButton[0].press(true);
                     Serial.println("Save");
-                    clearInput();
-                    calorie = dairycalories[count]; // Calorie = contains the saved calorie
-                    Serial.print("Calorie:");
-                    Serial.println(calorie);
-                    totalIntake += calorie;
-                    Serial.println(totalIntake);
-                    y = totalIntake;
-                    z = x - y;
+                    if (x == 0) {
+                        errorSave();
+                    }
+                    else {
+                        displaySave(categ, count);
+                        clearInput();
+                        calorie = dairycalories[count]; // Calorie = contains the saved calorie
+                        Serial.print("Calorie before: ");
+                        Serial.println(calorie);
+                        Serial.println(finalWeight);
+                        calorie = ceil(double((float)finalWeight / 100) * calorie);
+                        Serial.print("Calorie: ");
+                        Serial.println(calorie);
+                        totalIntake += calorie;
+                        Serial.println(totalIntake);
+                        y = totalIntake;
+                        z = x - y;
+
+                    }
 
                 }
                 else {

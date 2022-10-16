@@ -15,5 +15,7 @@ void DrawProtein() {
         }
     }
 
+
     DrawButtons();
+        
 }

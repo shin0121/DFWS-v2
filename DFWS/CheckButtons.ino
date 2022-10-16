@@ -10,14 +10,14 @@
         "Next", 1.5);
     NextButton[1].drawButton();
 
-    CancelButton[0].initButton(&tft, 200, 20, 75, 20, ILI9341_WHITE, ILI9341_BLUE,
+    CancelButton[1].initButton(&tft, 200, 20, 75, 20, ILI9341_WHITE, ILI9341_BLUE,
         ILI9341_WHITE,
         "CANCEL", SIDE_TEXTSIZE);
-    CancelButton[0].drawButton();
+    CancelButton[1].drawButton();
 
-    SaveButton[0].initButton(&tft, 200, 60, 75, 40, ILI9341_WHITE, ILI9341_BLUE,
+    SaveButton[1].initButton(&tft, 200, 60, 75, 40, ILI9341_WHITE, ILI9341_BLUE,
         ILI9341_WHITE,
         "SAVE", SIDE_TEXTSIZE);
-    SaveButton[0].drawButton();
+    SaveButton[1].drawButton();
 }
 

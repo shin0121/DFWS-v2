@@ -13,6 +13,6 @@ void DrawVeg() {
             veg[col + row].drawButton();
         }
     }
-
     DrawButtons();
+
 }

@@ -58,9 +58,6 @@ void DrawTrack(int goal, int intake, int rCal) {
         80, 30, ILI9341_RED, ILI9341_RED, ILI9341_BLACK,
         "Reset", 1.5);
     ResetButton[1].drawButton();
-}
 
-int RemainingCal(int intake, int rCal) {
-    int rem = rCal - intake;
-    return rem;
+
 }
