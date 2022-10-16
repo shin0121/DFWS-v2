@@ -239,7 +239,7 @@ void setup() {
     scale.begin(); // start connection to HX711
     scale.start(1000); // load cells gets 1000ms of time to stabilize
     //Calibarate your LOAD CELL with 100g weight, and change the value according to readings
-    scale.setCalFactor(216.83);
+    scale.setCalFactor(216.239335);
 
 }
 
@@ -486,6 +486,8 @@ void loop() {
             Serial.println("reset button");
             y = 0;
             z = 0;
+            calorie = 0;
+            totalIntake = 0;
             Serial.println(x);
             Serial.println(y);
             Serial.println(z);
